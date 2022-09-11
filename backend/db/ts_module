@@ -1,0 +1,238 @@
+-- MySQL dump 10.13  Distrib 8.0.29, for Win64 (x86_64)
+--
+-- Host: 127.0.0.1    Database: ts_module
+-- ------------------------------------------------------
+-- Server version	8.0.29
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `sequelizemeta`
+--
+
+DROP TABLE IF EXISTS `sequelizemeta`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sequelizemeta` (
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`name`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sequelizemeta`
+--
+
+LOCK TABLES `sequelizemeta` WRITE;
+/*!40000 ALTER TABLE `sequelizemeta` DISABLE KEYS */;
+INSERT INTO `sequelizemeta` VALUES ('20220910023619-create-tbl-tasks.js'),('20220910024701-create-tbl-lead-masters.js'),('20220910025114-create-tbl-employee-masters.js'),('20220910025500-create-tbl-employee-activities.js'),('20220910025744-create-tbl-department-masters.js'),('20220910030108-create-tbl-users.js');
+/*!40000 ALTER TABLE `sequelizemeta` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `tbl_department_masters`
+--
+
+DROP TABLE IF EXISTS `tbl_department_masters`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tbl_department_masters` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `department_name` varchar(255) DEFAULT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tbl_department_masters`
+--
+
+LOCK TABLES `tbl_department_masters` WRITE;
+/*!40000 ALTER TABLE `tbl_department_masters` DISABLE KEYS */;
+/*!40000 ALTER TABLE `tbl_department_masters` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `tbl_employee_activities`
+--
+
+DROP TABLE IF EXISTS `tbl_employee_activities`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tbl_employee_activities` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `task_title` varchar(255) DEFAULT NULL,
+  `assigned_to` int DEFAULT NULL,
+  `start_date` datetime DEFAULT NULL,
+  `end_date` varchar(255) DEFAULT NULL,
+  `remarks` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tbl_employee_activities`
+--
+
+LOCK TABLES `tbl_employee_activities` WRITE;
+/*!40000 ALTER TABLE `tbl_employee_activities` DISABLE KEYS */;
+/*!40000 ALTER TABLE `tbl_employee_activities` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `tbl_employee_masters`
+--
+
+DROP TABLE IF EXISTS `tbl_employee_masters`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tbl_employee_masters` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `employee_name` varchar(255) DEFAULT NULL,
+  `department_id` int DEFAULT NULL,
+  `date_of_birth` datetime DEFAULT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tbl_employee_masters`
+--
+
+LOCK TABLES `tbl_employee_masters` WRITE;
+/*!40000 ALTER TABLE `tbl_employee_masters` DISABLE KEYS */;
+/*!40000 ALTER TABLE `tbl_employee_masters` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `tbl_lead_masters`
+--
+
+DROP TABLE IF EXISTS `tbl_lead_masters`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tbl_lead_masters` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `full_name` varchar(255) DEFAULT NULL,
+  `phone` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `profession` varchar(255) DEFAULT NULL,
+  `address` varchar(255) DEFAULT NULL,
+  `lead_type_id` int DEFAULT NULL,
+  `lead_source` int DEFAULT NULL,
+  `assigned_to` int DEFAULT NULL,
+  `client_id` int DEFAULT NULL,
+  `location_by_district` varchar(255) DEFAULT NULL,
+  `pincode` int DEFAULT NULL,
+  `state_name` varchar(255) DEFAULT NULL,
+  `district_name` varchar(255) DEFAULT NULL,
+  `state_id` int DEFAULT NULL,
+  `district_id` int DEFAULT NULL,
+  `plot_size` int DEFAULT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tbl_lead_masters`
+--
+
+LOCK TABLES `tbl_lead_masters` WRITE;
+/*!40000 ALTER TABLE `tbl_lead_masters` DISABLE KEYS */;
+/*!40000 ALTER TABLE `tbl_lead_masters` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `tbl_tasks`
+--
+
+DROP TABLE IF EXISTS `tbl_tasks`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tbl_tasks` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `start_date` datetime DEFAULT NULL,
+  `expected_end_date` datetime DEFAULT NULL,
+  `end_date` datetime DEFAULT NULL,
+  `next_followup` datetime DEFAULT NULL,
+  `assigned_to` int DEFAULT NULL,
+  `current_status` int DEFAULT NULL,
+  `created_by` int DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tbl_tasks`
+--
+
+LOCK TABLES `tbl_tasks` WRITE;
+/*!40000 ALTER TABLE `tbl_tasks` DISABLE KEYS */;
+INSERT INTO `tbl_tasks` VALUES (1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2022-09-10 18:35:46','2022-09-10 18:35:46'),(2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2022-09-10 18:36:02','2022-09-10 18:36:02');
+/*!40000 ALTER TABLE `tbl_tasks` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `tbl_users`
+--
+
+DROP TABLE IF EXISTS `tbl_users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tbl_users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) DEFAULT NULL,
+  `dob` datetime DEFAULT NULL,
+  `phone` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `address` varchar(255) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tbl_users`
+--
+
+LOCK TABLES `tbl_users` WRITE;
+/*!40000 ALTER TABLE `tbl_users` DISABLE KEYS */;
+/*!40000 ALTER TABLE `tbl_users` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2022-09-11 11:08:44
