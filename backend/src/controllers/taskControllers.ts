@@ -53,7 +53,7 @@ const updatetask=async(req:any,res:any)=>{
     
 }
 
-// delete data using from body:
+// delete data using  body:
     const deletetask= async(req:any,res:any)=>{
               var {id}=req.body
               console.log('id:', req.body)
