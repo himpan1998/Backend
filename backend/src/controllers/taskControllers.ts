@@ -20,16 +20,7 @@ const gettasks=async(req:any,res:any)=>{
     }
 
 }
-const delete_one=async(req:any,res:any)=>{
-    try {
-        const {id}=req.params
-        const data=await tbl_tasks.destroy({where:{
-            id:id
-        }})
-    } catch (error) {
-        
-    }
-}
+
 const updatetask=async(req:any,res:any)=>{
     console.log('req',req.body)
       
@@ -61,6 +52,8 @@ const updatetask=async(req:any,res:any)=>{
         
     
 }
+
+// delete data using from body:
     const deletetask= async(req:any,res:any)=>{
               var {id}=req.body
               console.log('id:', req.body)
@@ -76,4 +69,18 @@ const updatetask=async(req:any,res:any)=>{
         }
     }
 
-export default {createtasks,gettasks,updatetask,deletetask}
+    // delete data using params:
+    const delete_one=async(req:any,res:any)=>{
+        try {
+            const {id}=req.params
+            const data=await tbl_tasks.destroy({where:{
+                id:id
+            }})
+            return res.json(data)
+        } catch (error) {
+            return res.json({"error":error})
+            
+        }
+    }
+
+export default {createtasks,gettasks,updatetask,deletetask,delete_one}
