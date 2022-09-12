@@ -10,7 +10,7 @@ const createtasks=async(req:any,res:any)=>{
        return res.json({"error":error}) 
     }
 }
-
+// gettasks using Seque. findAll method:  which will retrieve all entries from the table
 const gettasks=async(req:any,res:any)=>{
     try {
         var data=await tbl_tasks.findAll()
@@ -21,6 +21,43 @@ const gettasks=async(req:any,res:any)=>{
 
 }
 
+// gettask using sequelize findone method: always gives output as a Object and gives one row
+//  as a output which meet condition the condition:
+
+const getonetask=async(req:any,res:any)=>{
+    try {
+        const data= await tbl_tasks.findOne({
+            where:{current_status:80},
+        });
+            //  console.log(data.toJSON())
+            return  res.status(200).send(data)
+    } catch (error) {
+         return res.json({"error":error})
+    }
+}
+
+// gettasks using Sequelize findbypk method:always gives output as a
+
+const gettasksbypk=async(req:any,res:any)=>{
+    try {
+        const data= await tbl_tasks.findByPk(3);
+            //  console.log(data.toJSON())
+            return  res.status(200).send(data)
+    } catch (error) {
+         return res.json({"error":error})
+    }
+}
+// const gettasksbypk=async(req:any,res:any)=>{
+// const data = await tbl_tasks.findByPk(2);
+// if (data === null) {
+//   console.log('Not found!');
+  
+// } else {
+//   console.log( 'data found'); // true
+//   // Its primary key is 2
+//    return res.status(200).send(data)
+// }
+// }
 const updatetask=async(req:any,res:any)=>{
     console.log('req',req.body)
       
@@ -83,4 +120,10 @@ const updatetask=async(req:any,res:any)=>{
         }
     }
 
-export default {createtasks,gettasks,updatetask,deletetask,delete_one}
+export default {createtasks,
+                 gettasks,
+                getonetask,
+                gettasksbypk,
+                updatetask,
+                deletetask,
+                delete_one}
