@@ -1,4 +1,4 @@
-import express, { Router } from 'express'
+import express, { application, Router } from 'express'
 import multer from 'multer'
 import cors from 'cors'
 const jwt=require('jsonwebtoken');
@@ -13,6 +13,9 @@ app.use(json())
 app.use(cors())
 app.use(urlencoded({extended:true}))
 app.use('/tasks',routes.tasksRoutes)
+app.use('/leads',routes.leadsRoutes)
+app.use('/employees',routes.employeesRoutes)
+app.use('/users',routes.usersRoutes)
 
 app.listen(7000,()=>{
 console.log("running on 7000 port")
