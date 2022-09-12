@@ -37,7 +37,7 @@ const getonetask=async(req:any,res:any)=>{
 }
 
 // gettasks using Sequelize findbypk method: gives one row
-//  as a output which meet condition the condition:
+//  as a output which meet condition:
 
 const gettasksbypk=async(req:any,res:any)=>{
     try {
