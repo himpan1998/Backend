@@ -5,6 +5,7 @@ import tbl_tasks from "../models/tbl_tasks"
 const createtasks=async(req:any,res:any)=>{
     try {
         var data=await tbl_tasks.create(req.body)
+        console.log("data:",data);
         return res.status(200).send(data)
     } catch (error) {
        return res.json({"error":error}) 

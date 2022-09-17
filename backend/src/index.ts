@@ -6,6 +6,7 @@ import bodyParser from 'body-parser'
 import Sequelize from 'sequelize'
 import sequelize from './models/connect'
 import{json,urlencoded} from 'body-parser'
+import crypto from 'crypto';
 import routes from './routes';
 const app=express()
 

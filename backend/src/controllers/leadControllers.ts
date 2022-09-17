@@ -7,6 +7,7 @@ const createleads=async(req:any,res:any)=>{
            console.log('req',req.body)     
     try {
         const data=await tbl_lead_masters.create(req.body)
+        console.log("data:",data)
         return res.status(200).send(data)
     } catch (error) {
         return res.json({"error":error})
@@ -14,7 +15,6 @@ const createleads=async(req:any,res:any)=>{
 }
 
 const getleads=async(req:any,res:any)=>{
-            console.log("ooooooooooo")
     try {
         var data =await tbl_lead_masters.findAll()
         return res.status(200).send(data)
