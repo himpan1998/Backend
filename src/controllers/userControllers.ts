@@ -1,7 +1,7 @@
 import tbl_users from "../models/tbl_users";
 const jwt = require('jsonwebtoken');
 import jwt_decode from 'jwt-decode';
-import Ajv from "ajv";
+import Ajv, { stringify } from "ajv";
 import addFormats from "ajv-formats"
 import tbl_user_schema from "./validator";
 import { Model } from "sequelize/types";
@@ -30,6 +30,34 @@ const createUserList = async (req: any, res: any) => {
         return res.json({ "error": error })
     }
 }
+
+
+const CreateUser= async(req:any,res:any)=>{
+    try {
+        let {id}=req.params
+        let validate = ajv.compile(tbl_user_schema);
+        let valid = validate(req.body);
+        if(!valid)
+        return res.status(500).send("Input are not valid") 
+        var isAvl=await tbl_users.findOne({where:{
+            id:id
+        }})
+        if(isAvl){
+            var update= await tbl_users.update(req.body,{where:{
+                id:id
+            }})
+            return res.status(200).send({message:"update successfully",result:update})
+        }
+        else{            
+        var data = await tbl_users.create(req.body)
+        return res.status(200).send(data)
+        }
+
+    } catch (error) {
+        return res.json({"error":error})
+    }
+}
+
 
 
 // Update all columns in the table:(using req.params)       
@@ -73,6 +101,8 @@ const updateSpecificUsersList = async (req: any, res: any) => {
     }
 
 }
+
+
 
 const deleteuser = async (req: any, res: any) => {
     let id = req.params.id
@@ -216,7 +246,8 @@ export default {
     deleteuser,
     UserRegister,
     UserLogin,
-    validateToken
+    validateToken,
+    CreateUser
 
 };
 
