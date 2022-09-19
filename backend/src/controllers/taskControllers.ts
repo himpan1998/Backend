@@ -1,6 +1,7 @@
 // import {Op} from 'sequelize'
 import { where } from "sequelize/types"
 import tbl_tasks from "../models/tbl_tasks"
+import tbl_users from "../models/tbl_users";
 
 const createtasks=async(req:any,res:any)=>{
     try {
@@ -122,10 +123,45 @@ const updatetask=async(req:any,res:any)=>{
         }
     }
 
+//file upload using Multer
+ const createImage=async(req:any,res:any)=>{
+    req.body.image=req.file.path || null ;
+    try {
+        var data =await tbl_tasks.create(req.body)
+        return res.send(data);
+    } catch (error) {
+        return res.json({"error":error})
+    }
+ }
+
+const gettaskbyUsername=async(req:any,res:any)=>{
+    try {
+        var resp= await tbl_tasks.findAll({
+            attributes:['title','description','start_date','expected_end_date','end_date','next_followup','assigned_to','current_status','created_by','image'],
+            include:[
+                {
+                    attributes:['name'],
+                    model:tbl_users,
+                    as:'user'
+                }
+        
+            ]  
+        })
+        return res.send(resp)
+    } catch (error) {
+        return res.json({"error":error})
+    }
+   
+}
+
+
 export default {createtasks,
                  gettasks,
                 getonetask,
                 gettasksbypk,
                 updatetask,
                 deletetask,
-                delete_one}
+                delete_one,
+                createImage,
+                gettaskbyUsername
+            }

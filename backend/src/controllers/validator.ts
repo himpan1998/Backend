@@ -8,16 +8,17 @@ const tbl_user_schema = {
         },
         "dob": {
             "type": "string",
-            "format": "date"
+            "format":"date"
         },
         "phone": {
             "type": "string",
             "nullable": false
         },
 
-        "email": {
+        "email":{
             "type": "string",
-            "nullable": false
+            "format":"email",
+            "nullable":false
         },
 
 
@@ -27,10 +28,10 @@ const tbl_user_schema = {
         },
 
 
-        "password:": {
+        "password": {
             "type": "string",
             "nullable": false
-        }
+        },
 
     },
        "required":[

@@ -7,7 +7,9 @@ router.post('/create',users.createUserList)
 router.get('/get',users.getUserList)
 router.patch('/update/:id',users.updateUserList)
 router.patch('/updatelist/:id',users.updateSpecificUsersList)
-router.patch('/register',users.UserRegister)
+router.delete('/delete/:id',users.deleteuser)
+router.post('/register',users.UserRegister)
+router.post('/login',users.UserLogin)
 
 
 
