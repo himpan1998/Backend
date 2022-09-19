@@ -20,8 +20,7 @@ router.get('/getone',tasks.getonetask)
 router.get('/getbyPk',tasks.gettasksbypk)
 router.patch('/update/:id',tasks.updatetask)
 router.delete('/delete',tasks.deletetask)
-router.delete('/deleteone/:id',tasks.delete_one)
-// router.post('/image',tasks.createImage)
+router.delete('/deleteone/:id',tasks.delete_one),
 router.get('/taskbyusername',tasks.gettaskbyUsername)
 
 export default router;
