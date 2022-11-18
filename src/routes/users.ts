@@ -11,6 +11,7 @@ router.delete('/delete/:id',users.deleteuser)
 router.post('/register',users.UserRegister)
 router.post('/login',users.UserLogin)
 router.post('/create-update/:id',users.CreateUser)
+router.post('/create-update-user/:id',users.createUpdateuser)
 
 
 

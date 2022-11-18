@@ -20,6 +20,7 @@ app.use('/tasks',routes.tasksRoutes)
 app.use('/leads',routes.leadsRoutes)
 app.use('/employees',routes.employeesRoutes)
 app.use('/users',routes.usersRoutes)
+app.use('/customers',routes.customersRoutes)
 
 app.listen(7000,()=>{
 console.log("running on 7000 port")

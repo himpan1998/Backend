@@ -237,6 +237,34 @@ const validateToken = async (req: any, res: any) => {
         return res.status(401).send(error);
     }
 }
+// Api which will create and update simultanusoly:
+
+const createUpdateuser=async(req:any,res:any)=>{
+
+    try {
+        let {id}=req.params
+        let validate=ajv.compile(tbl_user_schema)
+        let valid =validate(req.body)
+        if(!valid)
+        return res.status(500).send("input are not valid")
+        var isAvl=await tbl_users.findOne({
+            where:{id:id}  
+        })
+        if(isAvl){
+            var update=await tbl_users.update(req.body,{
+              where:{id:id}  
+            })
+            return res.status(200).send({message:"update Sucessfully",result:update})
+        }
+        else{
+            var data=await tbl_users.create(req.body)
+            return res.status(200).send(data)
+        }
+        
+    } catch (error) {
+        return res.json({"error":error})
+    }
+}
 
 export default {
     createUserList,
@@ -247,7 +275,8 @@ export default {
     UserRegister,
     UserLogin,
     validateToken,
-    CreateUser
+    CreateUser,
+    createUpdateuser
 
 };
 
