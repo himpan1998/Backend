@@ -1,5 +1,5 @@
 import express from 'express';
-import tasks from '../controllers/taskControllers';
+import taskRoutes from '../controllers/taskControllers';
 var router=express.Router();
 
 import multer from 'multer';
@@ -12,15 +12,14 @@ const storage =multer.diskStorage({
     }
 });
 const upload=multer({storage: storage});
-router.post('/imageupload',upload.single("image"),tasks.createImage);
+router.post('/imageupload',upload.single("image"),taskRoutes.createImage);
 
-router.post('/create',tasks.createtasks)
-router.get('/gettask',tasks.gettasks)
-router.get('/getone',tasks.getonetask)
-router.get('/getbyPk',tasks.gettasksbypk)
-router.patch('/update/:id',tasks.updatetask)
-router.delete('/delete',tasks.deletetask)
-router.delete('/deleteone/:id',tasks.delete_one),
-router.get('/taskbyusername',tasks.gettaskbyUsername)
+router.post('/create',taskRoutes.createtasks)
+router.get('/gettask',taskRoutes.gettasks)
+router.get('/getone',taskRoutes.getonetask)
+router.get('/getbyPk',taskRoutes.gettasksbypk)
+router.patch('/update/:id',taskRoutes.updatetask)
+router.delete('/deleteone/:id',taskRoutes.delete_one),
+router.get('/taskbyusername',taskRoutes.gettaskbyUsername)
 
 export default router;

@@ -1,8 +1,9 @@
 import express from 'express';
-import customers from "../controllers/customersControllers"
+import customerRoutes from "../controllers/customersControllers"
 var  router =express.Router();
 
-router.post('/create',customers.createCustomer);
+router.post('/create',customerRoutes.createCustomer);
+router.get('/get',customerRoutes.getCustomer);
 
 
 

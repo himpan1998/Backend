@@ -3,27 +3,31 @@ const jwt = require('jsonwebtoken');
 import jwt_decode from 'jwt-decode';
 import Ajv, { stringify } from "ajv";
 import addFormats from "ajv-formats"
-import tbl_user_schema from "./validator";
+import schemaValidator from "./validator";
 import { Model } from "sequelize/types";
 const ajv = new Ajv()
 addFormats(ajv, ["date", "email"]);
 const bcrypt = require('bcryptjs');
+const userdb = tbl_users
 
-
+// API end-point to get all user list:
 
 const getUserList = async (req: any, res: any) => {
     try {
-        var data = await tbl_users.findAll()
+        var data = await userdb.findAll()
         return res.status(200).send(data)
     } catch (error) {
         return res.json({ "error": error })
     }
 
 }
+
+
+// API end-point to insert  user :
 const createUserList = async (req: any, res: any) => {
 
     try {
-        var data = await tbl_users.create(req.body)
+        var data = await userdb.create(req.body)
         console.log('data', data)
         return res.status(200).send(data)
     } catch (error) {
@@ -31,42 +35,46 @@ const createUserList = async (req: any, res: any) => {
     }
 }
 
-
-const CreateUser= async(req:any,res:any)=>{
+// API end-point to insert and update user :
+const CreateUser = async (req: any, res: any) => {
     try {
-        let {id}=req.params
-        let validate = ajv.compile(tbl_user_schema);
+        let { id } = req.params
+        let validate = ajv.compile(schemaValidator.userSchema);
         let valid = validate(req.body);
-        if(!valid)
-        return res.status(500).send("Input are not valid") 
-        var isAvl=await tbl_users.findOne({where:{
-            id:id
-        }})
-        if(isAvl){
-            var update= await tbl_users.update(req.body,{where:{
-                id:id
-            }})
-            return res.status(200).send({message:"update successfully",result:update})
+        if (!valid)
+            return res.status(500).send("Input are not valid")
+        var isAvl = await userdb.findOne({
+            where: {
+                id: id
+            }
+        })
+        if (isAvl) {
+            var update = await userdb.update(req.body, {
+                where: {
+                    id: id
+                }
+            })
+            return res.status(200).send({ message: "update successfully", result: update })
         }
-        else{            
-        var data = await tbl_users.create(req.body)
-        return res.status(200).send(data)
+        else {
+            var data = await userdb.create(req.body)
+            return res.status(200).send(data)
         }
 
     } catch (error) {
-        return res.json({"error":error})
+        return res.json({ "error": error })
     }
 }
 
 
 
-// Update all columns in the table:(using req.params)       
+// API end-point to Update all columns in the table:(using req.params) :      
 const updateUserList = async (req: any, res: any) => {
     try {
         const { id } = req.params
         console.log('id', id);
 
-        const data = await tbl_users.update(req.body, {
+        const data = await userdb.update(req.body, {
 
             where: {
                 id: id
@@ -78,7 +86,7 @@ const updateUserList = async (req: any, res: any) => {
     }
 }
 
-// Update particular columns in the table:(using req.params)  :
+// API end-point to Update particular columns in the table:(using req.params):
 const updateSpecificUsersList = async (req: any, res: any) => {
 
     try {
@@ -90,7 +98,7 @@ const updateSpecificUsersList = async (req: any, res: any) => {
             phone: req.body.phone,
             email: req.body.email
         }
-        const data = await tbl_users.update(update_tbl_users, {
+        const data = await userdb.update(update_tbl_users, {
             where: {
                 id: id
             }
@@ -103,12 +111,12 @@ const updateSpecificUsersList = async (req: any, res: any) => {
 }
 
 
-
+// API end-point to remove user by id :
 const deleteuser = async (req: any, res: any) => {
     let id = req.params.id
     console.log(id)
     try {
-        var resp = await tbl_users.destroy({
+        var resp = await userdb.destroy({
             where: { id: id }
         })
         return res.json(resp)
@@ -117,7 +125,7 @@ const deleteuser = async (req: any, res: any) => {
     }
 }
 
-
+// API end-point to user registration:
 const UserRegister = async (req: any, res: any) => {
     const { password } = req.body
     const salt = await bcrypt.genSalt(10);
@@ -130,7 +138,7 @@ const UserRegister = async (req: any, res: any) => {
         if (!(name && dob && phone && email && address && password)) {
             return res.status(400).send("Please Enter All Required Inputs.");
         }
-        const oldUser_exits = await tbl_users.findOne({
+        const oldUser_exits = await userdb.findOne({
             where: {
                 phone,
                 password
@@ -148,14 +156,14 @@ const UserRegister = async (req: any, res: any) => {
             password: hasspassword
         }
         // console.log(createbody);
-        let validate = ajv.compile(tbl_user_schema);
+        let validate = ajv.compile(schemaValidator.userSchema);
         let valid = validate(createbody);
         console.log('isvalid', valid)
         console.log(validate.errors);
         if (!valid) {
             return res.status(500).send("Input are not valid")
         }
-        const user = await tbl_users.create(createbody)
+        const user = await userdb.create(createbody)
         return res.status(200).send("User Registration is Sucessful")
     }
     catch (error) {
@@ -164,16 +172,17 @@ const UserRegister = async (req: any, res: any) => {
     }
 }
 
+
+// API end-point for userlogin :
 const UserLogin = async (req: any, res: any) => {
     const { phone, password } = req.body
     console.log("data:", req.body)
     try {
-        const users = await tbl_users.findOne({
+        const users = await userdb.findOne({
             where: {
                 phone,
                 password
             }
-
         })
         console.log(users)
         if (!users) {
@@ -203,6 +212,7 @@ const UserLogin = async (req: any, res: any) => {
 
 }
 
+// To generate token:
 const generateToken = async (user: any) => {
     let jwtSecretKey = process.env.JWT_SECRET_KEY
     console.log('key', jwtSecretKey)
@@ -218,6 +228,7 @@ const generateToken = async (user: any) => {
     }
 }
 
+// To validate Token 
 const validateToken = async (req: any, res: any) => {
     let tokenHeaderKey = process.env.TOKEN_HEADER_KEY;
     let jwtSecretKey = process.env.JWT_SECRET_KEY;
@@ -237,36 +248,9 @@ const validateToken = async (req: any, res: any) => {
         return res.status(401).send(error);
     }
 }
-// Api which will create and update simultanusoly:
 
-const createUpdateuser=async(req:any,res:any)=>{
 
-    try {
-        let {id}=req.params
-        let validate=ajv.compile(tbl_user_schema)
-        let valid =validate(req.body)
-        if(!valid)
-        return res.status(500).send("input are not valid")
-        var isAvl=await tbl_users.findOne({
-            where:{id:id}  
-        })
-        if(isAvl){
-            var update=await tbl_users.update(req.body,{
-              where:{id:id}  
-            })
-            return res.status(200).send({message:"update Sucessfully",result:update})
-        }
-        else{
-            var data=await tbl_users.create(req.body)
-            return res.status(200).send(data)
-        }
-        
-    } catch (error) {
-        return res.json({"error":error})
-    }
-}
-
-export default {
+const userRoutes: any = {
     createUserList,
     getUserList,
     updateUserList,
@@ -276,9 +260,8 @@ export default {
     UserLogin,
     validateToken,
     CreateUser,
-    createUpdateuser
-
-};
+}
+export default userRoutes;
 
 
 

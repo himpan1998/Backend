@@ -2,10 +2,12 @@
 import { where } from "sequelize/types"
 import tbl_tasks from "../models/tbl_tasks"
 import tbl_users from "../models/tbl_users";
+const taksdb=tbl_tasks
+const userdb=tbl_users
 
 const createtasks=async(req:any,res:any)=>{
     try {
-        var data=await tbl_tasks.create(req.body)
+        var data=await taksdb.create(req.body)
         console.log("data:",data);
         return res.status(200).send(data)
     } catch (error) {
@@ -15,7 +17,7 @@ const createtasks=async(req:any,res:any)=>{
 // gettasks using Seque. findAll method:  which will retrieve all entries from the table
 const gettasks=async(req:any,res:any)=>{
     try {
-        var data=await tbl_tasks.findAll()
+        var data=await taksdb.findAll()
         return res.status(200).send(data)
     } catch (error) {
        return res.json({"error":error}) 
@@ -28,7 +30,7 @@ const gettasks=async(req:any,res:any)=>{
 
 const getonetask=async(req:any,res:any)=>{
     try {
-        const data= await tbl_tasks.findOne({
+        const data= await taksdb.findOne({
             where:{current_status:80},
         });
             //  console.log(data.toJSON())
@@ -43,7 +45,7 @@ const getonetask=async(req:any,res:any)=>{
 
 const gettasksbypk=async(req:any,res:any)=>{
     try {
-        const data= await tbl_tasks.findByPk(3);
+        const data= await taksdb.findByPk(3);
             //  console.log(data.toJSON())
             return  res.status(200).send(data)
     } catch (error) {
@@ -72,7 +74,7 @@ const updatetask=async(req:any,res:any)=>{
         current_status:req.body.current_status
     }
     
-    const data=await tbl_tasks.update(update_tbl_tasks,{where:{
+    const data=await taksdb.update(update_tbl_tasks,{where:{
         id:id
     }})
     .then(result=>{
@@ -100,7 +102,7 @@ const updatetask=async(req:any,res:any)=>{
             //   var id=req.body.id
             
         try {
-            const data =await tbl_tasks.destroy({
+            const data =await taksdb.destroy({
                     where:{id:id}
             })
             return res.json(data)
@@ -113,7 +115,7 @@ const updatetask=async(req:any,res:any)=>{
     const delete_one=async(req:any,res:any)=>{
         try {
             const {id}=req.params
-            const data=await tbl_tasks.destroy({where:{
+            const data=await taksdb.destroy({where:{
                 id:id
             }})
             return res.json(data)
@@ -127,7 +129,7 @@ const updatetask=async(req:any,res:any)=>{
  const createImage=async(req:any,res:any)=>{
     req.body.image=req.file.path || null ;
     try {
-        var data =await tbl_tasks.create(req.body)
+        var data =await taksdb.create(req.body)
         return res.send(data);
     } catch (error) {
         return res.json({"error":error})
@@ -136,12 +138,12 @@ const updatetask=async(req:any,res:any)=>{
 
 const gettaskbyUsername=async(req:any,res:any)=>{
     try {
-        var resp= await tbl_tasks.findAll({
+        var resp= await taksdb.findAll({
             attributes:['title','description','start_date','expected_end_date','end_date','next_followup','assigned_to','current_status','created_by','image'],
             include:[
                 {
                     attributes:['name'],
-                    model:tbl_users,
+                    model:userdb,
                     as:'user'
                 }
         
@@ -155,7 +157,7 @@ const gettaskbyUsername=async(req:any,res:any)=>{
 }
 
 
-export default {createtasks,
+const taskRoutes:any= {createtasks,
                  gettasks,
                 getonetask,
                 gettasksbypk,
@@ -165,3 +167,4 @@ export default {createtasks,
                 createImage,
                 gettaskbyUsername
             }
+ export default taskRoutes;

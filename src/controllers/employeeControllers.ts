@@ -1,9 +1,9 @@
 import tbl_employee_activities from "../models/tbl_employee_activities";
-
+const employeeActivitesdb=tbl_employee_activities
 const createEmployeesList = async (req: any, res: any) => {
 
     try {
-        var data = await tbl_employee_activities.create(req.body)
+        var data = await employeeActivitesdb.create(req.body)
 
         console.log('data', data)
         return res.status(200).send(data)
@@ -14,7 +14,7 @@ const createEmployeesList = async (req: any, res: any) => {
 
 const getEmployeesList = async (req: any, res: any) => {
     try {
-        var data = await tbl_employee_activities.findAll()
+        var data = await employeeActivitesdb.findAll()
         return res.status(200).send(data)
     } catch (error) {
         return res.json({ "error": error })
@@ -29,7 +29,7 @@ const updateEmployeeList = async (req: any, res: any) => {
         const { id } = req.query
         console.log('id', id);
 
-        const data = await tbl_employee_activities.update(req.body, {
+        const data = await employeeActivitesdb.update(req.body, {
             where: {
                 id: id
             }
@@ -53,7 +53,7 @@ const updateSpecificEmployeeList = async (req: any, res: any) => {
             remarks: req.body.remarks
 
         }
-        const data = await tbl_employee_activities.update(update_tbl_employee_activities, {
+        const data = await employeeActivitesdb.update(update_tbl_employee_activities, {
             where: {
                 id: id
             }
@@ -65,9 +65,10 @@ const updateSpecificEmployeeList = async (req: any, res: any) => {
 
 }
 
-export default {
+ const employeeActivitiesRoutes:any={
     createEmployeesList,
     getEmployeesList,
     updateEmployeeList,
     updateSpecificEmployeeList
 };
+export default employeeActivitiesRoutes;

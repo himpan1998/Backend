@@ -1,17 +1,17 @@
 import express from 'express';
-import users from '../controllers/userControllers';
+import userRoutes from '../controllers/userControllers';
 var router=express.Router();
 
 
-router.post('/create',users.createUserList)
-router.get('/get',users.getUserList)
-router.patch('/update/:id',users.updateUserList)
-router.patch('/updatelist/:id',users.updateSpecificUsersList)
-router.delete('/delete/:id',users.deleteuser)
-router.post('/register',users.UserRegister)
-router.post('/login',users.UserLogin)
-router.post('/create-update/:id',users.CreateUser)
-router.post('/create-update-user/:id',users.createUpdateuser)
+router.post('/create',userRoutes.createUserList)
+router.get('/get',userRoutes.getUserList)
+router.patch('/update/:id',userRoutes.updateUserList)
+router.patch('/updatelist/:id',userRoutes.updateSpecificUsersList)
+router.delete('/delete/:id',userRoutes.deleteuser)
+router.post('/register',userRoutes.UserRegister)
+router.post('/login',userRoutes.UserLogin)
+router.post('/create-update/:id',userRoutes.CreateUser)
+
 
 
 

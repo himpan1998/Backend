@@ -1,4 +1,4 @@
-const tbl_user_schema = {
+const userSchema = {
     "type": "object",
     "properties": {
 
@@ -8,17 +8,17 @@ const tbl_user_schema = {
         },
         "dob": {
             "type": "string",
-            "format":"date"
+            "format": "date"
         },
         "phone": {
             "type": "string",
             "nullable": false
         },
 
-        "email":{
+        "email": {
             "type": "string",
-            "format":"email",
-            "nullable":false
+            "format": "email",
+            "nullable": false
         },
 
 
@@ -32,13 +32,54 @@ const tbl_user_schema = {
             "type": "string",
             "nullable": false
         },
-
     },
-       "required":[
+    "required": [
         "phone",
         "password"
-       ],
-        additionalProperties:false
+    ],
+    additionalProperties: false
+}
+const customerSchema = {
+    "type": "object",
+    "properties": {
+
+        "first_name": {
+            "type": "string",
+            "nullable": false
+        },
+        "last_name": {
+            "type": "string",
+            "format": "date"
+        },
+        "phone": {
+            "type": "string",
+            "nullable": false
+        },
+
+        "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": false
+        },
+        "address": {
+            "type": "string",
+            "nullable": false
+        },
+        "docket_id": {
+            "type": "string",
+            "nullable": false
+        }
+
+    },
+    "required": [
+        "first_name", "last_name", "phone", "email", "address", "docket_id"
+    ],
+    additionalProperties: false
 }
 
-export default  tbl_user_schema
+
+const schemaValidator: any = {
+    userSchema,customerSchema
+}
+
+export default schemaValidator;
