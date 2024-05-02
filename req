@@ -1,0 +1,1487 @@
+const KEYEXPR = 'id';
+let createLoadingProgramButtonComponent;
+let subdealerPopup;
+let otherPartyPopup;
+var rows = [];
+
+const ACCOUNT_TYPES = [
+  { id: 39, text: 'Dealer' },
+  { id: 40, text: 'Subdealer' },
+  { id: 41, text: 'Other Party Name' }
+  // { id: 41, text: 'Others' }
+];
+const REQUISITION_HISTORY_SEARCH_FORM_IDENTIFIER = '#form';
+const REQUISITION_HISTORY_TABLE_IDENTIFIER = '#order-render-div';
+const LOADING_PROGRAM_TABLE_IDENTIFIER = '#loading-program-dx';
+const LOADING_PROGRAM_POPUP_IDENTIFIER = '#popup';
+const LOADING_PROGRAM_FORM_IDENTIFIER = '#popup-form';
+const SUBDEALER_KYC_INFO_POPUP_IDENTIFIER = '#subdealer-info-popup';
+const SUBDEALER_POPUP_FORM_IDENTIFIER = '#subdealer-popup-form';
+const SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER = 'selectedRows';
+const SET_LOADING_PROGRAM_ROUTE_IDENTIFIER = 'webapi.order.set_loading_program';
+const OTHER_PARTY_POPUP_FORM_IDENTIFIER = '#other-party-popup-form';
+const OTHER_PARTY_KYC_INFO_POPUP_IDENTIFIER = '#other-party-info-popup';
+var SelectedValue = [];
+
+function loadSelectedLoadingPrograms(data) {
+  return $(LOADING_PROGRAM_TABLE_IDENTIFIER).dxDataGrid({
+    dataSource: data,
+    KEYEXPR,
+    scrolling: {
+      mode: 'virtual'
+    },
+    remoteOperations: false,
+    showBorders: true,
+    sorting: {
+      mode: 'none'
+    },
+    ...LOAD_PANEL_DX,
+    rowDragging: {
+      allowReordering: true,
+      allowDropInsideItem: true,
+      dropFeedbackMode: 'push',
+      onReorder(e) {
+        const fromIndex = e.fromIndex;
+        const toIndex = e.toIndex;
+        // Swap the positions of the dragged item and the target item in the data array
+        const [movedItem] = data.splice(fromIndex, 1);
+        data.splice(toIndex, 0, movedItem);
+        // Update route_no values for the swapped items
+        data.forEach((item, index) => {
+          item.route_no = index + 1;
+        });
+        // Update the local storage and refresh the component
+        localStorage.setItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER, JSON.stringify(data));
+        e.component.refresh();
+      }
+    },
+    onToolbarPreparing: (e) => {
+      e.toolbarOptions.items.unshift({
+        location: 'before',
+        template() {
+          return $('<div>').addClass('text-info').append($('<span>').text('To adjust the routes, you can rearrange the row by dragging them'));
+        }
+      });
+    },
+    columns: [
+      {
+        dataField: 'route_no',
+        // caption: 'Loading No',
+        alignment: 'left'
+      },
+      {
+        dataField: 'order_code',
+        caption: 'Requisition ID',
+        fixed: false
+      },
+      {
+        dataField: 'dealer_name',
+        allowEditing: false
+      },
+      {
+        dataField: 'sap_code',
+        caption: 'SAP Code',
+        allowEditing: false,
+        alignment: 'left'
+      },
+      {
+        dataField: 'order_date',
+        caption: 'Req. Date'
+      },
+      {
+        dataField: 'source'
+      },
+      {
+        dataField: 'order_qty',
+        caption: 'Requisition Qty(ton)'
+      },
+      {
+        dataField: 'consignee_details_view'
+      },
+
+      {
+        dataField: 'consignee',
+        caption: 'Select consignee',
+        alignment: 'left',
+        cellTemplate: function actionCellTemplate(container, options) {
+          let selectBoxObj;
+          $(container).dxSelectBox({
+            value: options.value,
+            dataSource: ACCOUNT_TYPES,
+            onInitialized: (e) => {
+              selectBoxObj = e.component;
+            },
+            onValueChanged: function (e, index) {
+              // if ([40, 41].includes(e.value)) {
+              //   initiaizeSubdealerPopup(e.value, options.data, selectBoxObj);
+              // }
+              if ([40].includes(e.value)) {
+                initiaizeSubdealerPopup(e.value, options.data, selectBoxObj);
+              }
+              if ([41].includes(e.value)) {
+                initiaizeOtherPartyPopup(e.value, options.data, selectBoxObj);
+              }
+            },
+            displayExpr: 'text',
+            valueExpr: 'id',
+            value: null,
+            placeholder: 'Select consignee'
+          });
+        }
+      },
+      {
+        type: 'buttons',
+        dataField: 'Action',
+        caption: 'Action',
+        cssClass: 'actionArea',
+        allowFiltering: false,
+        allowSorting: false,
+        visible: true,
+        cellTemplate: function (container, options) {
+          let data = options.row.data;
+          // console.log('row-data', data);
+          if (data) {
+            var editButton = $('<button>')
+              .text('View (Edit) ')
+              .addClass('btn btn-primary')
+              .on('click', function () {
+                // console.log(localStorage.getItem('selectedRows'));
+                // ViewEditSubdealerInfo(subdealerPopup);
+                let selectedRows = JSON.parse(localStorage.getItem('selectedRows'));
+                selectedRows = selectedRows.filter((e) => e.id == data.id) ? selectedRows.filter((e) => e.id == data.id)[0] : [];
+                console.log('data.consignee', selectedRows);
+                if ([40].includes(selectedRows.consignee)) {
+                  // let consigneePinEditor = e.component.getEditor('consignee_pincode');
+                  // consigneePinEditor?.option('value', selectedRows[0].consignee_pincode);
+
+                  initiaizeSubdealerPopup(selectedRows.consignee, data);
+                 $('<button>').onFieldDataChanged=function (e) {
+                    if (e.column.dataField === 'Action') {
+                      console.log(e.component);
+                    }
+                  }
+                }
+                if ([41].includes(selectedRows.consignee)) {
+                  initiaizeOtherPartyPopup(selectedRows.consignee, data);
+                }
+                if (selectedRows.consignee === 0) {
+                  notify('No consignee selected', 'error');
+                }
+              })
+              .appendTo(container);
+          }
+        }
+      }
+    ],
+  });
+}
+
+// View and Edit  Consignee Informations:
+function ViewEditSubdealerInfo(data) {
+  console.log('data', data);
+}
+
+function loadPopUpForm() {
+  let formData = {};
+
+  $(LOADING_PROGRAM_FORM_IDENTIFIER).dxForm({
+    labelMode: 'floating',
+    formData: formData,
+    colCount: 5,
+    onInitialized: function (e) {
+      formInstance = e.component;
+    },
+    onContentReady: function (e) {},
+    onFieldDataChanged: function (e) {},
+    items: [
+      {
+        dataField: 'registration_no',
+        editorType: 'dxTextBox',
+        editorOptions: {},
+        validationRules: [
+          {
+            type: 'pattern',
+            pattern: '^[a-zA-Z0-9 ]+$',
+            message: 'Provide a valid vehicle registration number, no special characters are allowed.'
+          }
+        ],
+        label: {
+          text: 'Vehicle registration number'
+        }
+      },
+      {
+        dataField: 'driver_name',
+        editorType: 'dxTextBox',
+        editorOptions: {},
+        validationRules: [
+          {
+            type: 'pattern',
+            pattern: '^[a-zA-Z ]+$',
+            message: 'Provide a valid driver name'
+          }
+        ],
+        label: {
+          text: 'Transporter / driver name'
+        }
+      },
+      {
+        dataField: 'driver_contact_number',
+        editorType: 'dxNumberBox',
+        editorOptions: {
+          value: ''
+        },
+        validationRules: [
+          //   {
+          //     type: 'required',
+          //     message: 'Kindly provide driver contact number'
+          //   },
+          {
+            type: 'pattern',
+            pattern: '^[0-9]{10}$',
+            message: 'Provide a valid driver contact number'
+          }
+        ],
+        label: {
+          text: 'Driver contact number'
+        }
+      },
+      {
+        dataField: 'material_type',
+        editorType: 'dxSelectBox',
+        editorOptions: {
+          items: material_types,
+          searchEnabled: true,
+          showClearButton: true,
+          valueExpr: 'id',
+          displayExpr: (item) => {
+            if (item) {
+              return `${item.name}`;
+            }
+          }
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'Select material type first'
+          }
+        ],
+        label: {
+          text: 'Select Material Type'
+        }
+      },
+      {
+        dataField: 'delivery_date',
+        editorType: 'dxDateBox',
+        editorOptions: {
+          displayFormat: 'dd-MM-yyyy',
+          dateSerializationFormat: 'yyyy-MM-dd',
+          min: new Date(),
+          max: new Date().getTime() + 2 * 24 * 60 * 60 * 1000
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'Delivery date is required'
+          }
+        ],
+        label: {
+          text: 'Required delivery date'
+        }
+      },
+      {
+        colSpan: 0,
+        template: (data, itemElement) => {
+          $('<div class="m-1">')
+            .dxButton({
+              stylingMode: 'contained',
+              text: 'Submit',
+              elementAttr: {
+                class: 'save-btn'
+              },
+              useSubmitBehavior: true,
+              onClick(e) {
+                const listData = $('#loading-program-dx .dx-texteditor-input');
+                let countConsigneeSelectionValues = 0;
+                for (var i = 0; i < listData.length; i++) {
+                  // console.log('lostDaata value', listData[i].value);
+                  if (listData[i].value) {
+                    countConsigneeSelectionValues++;
+                  }
+                }
+
+                if (listData.length == countConsigneeSelectionValues) {
+                  const form = $(LOADING_PROGRAM_FORM_IDENTIFIER).dxForm('instance');
+                  if (form.validate().isValid) {
+                    const formData = form.option().formData;
+                    const orderData = JSON.parse(localStorage.getItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER));
+                    const TotalOrderQunatity = orderData.reduce((acc, order) => acc + parseFloat(order.order_qty), 0);
+
+                    if (TotalOrderQunatity > 40 && formData.material_type == 1) {
+                      notify('Order qantity can not be more than 40 tons for this material type', 'warning');
+                    }
+                    if (TotalOrderQunatity > 30 && formData.material_type == 2) {
+                      notify('Order qantity can not be more than 30 tons for this material type', 'warning');
+                    }
+                    if (TotalOrderQunatity > 40 && formData.material_type == 3) {
+                      notify('Order qantity can not be more than 40 tons for this material type', 'warning');
+                    }
+                    const combinedData = {
+                      orders: orderData,
+                      ...formData
+                    };
+                    setLoadingProgram(combinedData);
+                  }
+                } else {
+                  notify('You must select all consignee to continue', 'error');
+                }
+              }
+            })
+            .appendTo(itemElement);
+        }
+      }
+    ]
+  });
+}
+
+const setLoadingProgram = (payload) => {
+  console.log('payload', payload);
+  let URL = route(SET_LOADING_PROGRAM_ROUTE_IDENTIFIER);
+  axios
+    .post(URL, payload)
+    .then(function (response) {
+      console.log('response', response);
+      notify('Loading program was updated sucessfully!!', 'success');
+      $(LOADING_PROGRAM_POPUP_IDENTIFIER).dxPopup('instance').hide();
+      $(REQUISITION_HISTORY_TABLE_IDENTIFIER).dxDataGrid('instance').refresh();
+      localStorage.removeItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER);
+    })
+    .catch(function (error) {
+      console.log('error', error);
+    });
+};
+
+const loadingProgramTemplate = function () {
+  let data = JSON.parse(localStorage.getItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER));
+  // console.log('data', data);
+  data = data.map((row, index) => {
+    return {
+      ...row,
+      route_no: index + 1,
+      consignee: 0,
+      pan_number: '',
+      gst_number: '',
+      address: '',
+      consignee_state_id: '',
+      consignee_district_id: '',
+      consignee_pincode: '',
+      address_line_2: '',
+      consignee_name: '',
+      business_name: '',
+      state: '',
+      district: ''
+    };
+  });
+  localStorage.setItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER, JSON.stringify(data));
+
+  setTimeout(() => {
+    loadSelectedLoadingPrograms(data);
+    loadPopUpForm();
+  }, 200);
+
+  return $('<div>').append(`
+  <div id="${LOADING_PROGRAM_FORM_IDENTIFIER.replace('#', '')}"></div>
+  <div id="${SUBDEALER_KYC_INFO_POPUP_IDENTIFIER.replace('#', '')}"></div>
+  <div id="${OTHER_PARTY_KYC_INFO_POPUP_IDENTIFIER.replace('#', '')}"></div>
+  <div id="${LOADING_PROGRAM_TABLE_IDENTIFIER.replace('#', '')}"></div>`);
+};
+function loadSubdealerPopupForm(dataset, accountType) {
+  const formData = {};
+  $(SUBDEALER_POPUP_FORM_IDENTIFIER).dxForm({
+    labelMode: 'floating',
+    formData: formData,
+    colCount: 2,
+    onInitialized: function (e) {
+      formInstance = e.component;
+    },
+
+    onContentReady: function (e) {},
+    onFieldDataChanged: (e) => {
+      let component = e.component;
+
+      if (e.dataField == 'consignee') {
+        if (e.value != undefined) {
+          let subdealerDeatils = dataset.subdealers.find((obj) => obj.subdealer_id == e.value);
+          // console.log('subdealerDeatils', subdealerDeatils);
+          let panEditor = component.getEditor('pan_number');
+          panEditor?.option('value', subdealerDeatils.pan_no);
+
+          let consigneePinEditor = component.getEditor('consignee_pincode');
+          consigneePinEditor?.option('value', subdealerDeatils.address.pin);
+
+          let addressLine1Editor = component.getEditor('address');
+          addressLine1Editor?.option('value', subdealerDeatils.address.full_address);
+        }
+      }
+      if (e.dataField === 'consignee_state_id') {
+        let editor = component.getEditor('consignee_district_id');
+        dxAreaHelper.getDistirct(e.value, editor);
+      }
+
+      let consigneeStateEditor = component.getEditor('consignee_state_id');
+      let consigneeDistrictEditor = component.getEditor('consignee_district_id');
+      if (e.dataField === 'consignee_pincode') {
+        const pincode = e.value;
+        if (pincode.length == 6) {
+          $.ajax({
+            url: route('webapi.order.get_state_district_by_pincode'),
+            type: 'GET',
+            data: { pincode: pincode },
+            success: function (response) {
+              consigneeStateEditor?.option('value', (response?.data?.data[0]?.state_id).toString());
+              consigneeDistrictEditor?.option('value', response?.data?.data[0]?.district_id);
+              if (response?.data?.data[0]?.state_id != null) {
+                consigneeStateEditor?.option('readOnly', true);
+                consigneeDistrictEditor?.option('readOnly', true);
+              } else {
+                consigneeStateEditor?.option('readOnly', false);
+                consigneeDistrictEditor?.option('readOnly', false);
+              }
+            },
+            error: function (error) {
+              console.error('Error fetching state and district:', error);
+            }
+          });
+        } else {
+          consigneeStateEditor?.option('value', null);
+          consigneeDistrictEditor?.option('value', null);
+          consigneeStateEditor?.option('readOnly', false);
+          consigneeDistrictEditor?.option('readOnly', false);
+        }
+      }
+    },
+    items: [
+      {
+        dataField: 'consignee',
+        caption: 'Select Subdealer',
+        alignment: 'left',
+        editorType: 'dxSelectBox',
+        editorOptions: {
+          items: dataset.subdealers,
+          searchEnabled: true,
+          valueExpr: 'subdealer_id',
+          displayExpr: 'name',
+          showClearButton: true
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'select subdealer name'
+          }
+        ],
+        label: {
+          text: 'Select Subdealer'
+        }
+      },
+      {
+        dataField: 'pan_number',
+        editorType: 'dxTextBox',
+        editorOptions: {
+          items: dataset.subdealers,
+          searchEnabled: true,
+          displayExpr: 'pan_no',
+          valueExpr: 'subdealer_id',
+          showClearButton: true,
+          inputAttr: { style: 'text-transform: uppercase' }
+        },
+        label: {
+          text: 'PAN number'
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'PAN number is required'
+          },
+          {
+            type: 'pattern',
+            pattern: /^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$/,
+            message: 'Invalid PAN number.'
+          }
+        ]
+      },
+
+      {
+        dataField: 'consignee_pincode',
+        editorType: 'dxTextBox',
+        // colSpan: 2,
+        editorOptions: {
+          value: '',
+          useMaskedValue: true
+        },
+        label: {
+          text: 'Pin-code'
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'Pin -code is required'
+          },
+          {
+            type: 'pattern',
+            pattern: /^\d{6}$/,
+            message: 'Invalid Pin-Code.'
+          }
+        ]
+      },
+      {
+        dataField: 'consignee_state_id',
+        editorType: 'dxSelectBox',
+        editorOptions: {
+          items: states,
+          searchEnabled: true,
+          showClearButton: true,
+          displayExpr: 'state_name',
+          valueExpr: 'state_id'
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'State is required'
+          }
+        ],
+        label: {
+          text: 'State'
+        }
+      },
+      {
+        dataField: 'consignee_district_id',
+        editorType: 'dxSelectBox',
+        editorOptions: {
+          items: [],
+          searchEnabled: true,
+          showClearButton: true,
+          displayExpr: 'district_name',
+          valueExpr: 'district_id'
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'District is required'
+          }
+        ],
+        label: {
+          text: 'District'
+        }
+      },
+      {
+        dataField: 'address',
+        editorType: 'dxTextArea',
+        colSpan: 2,
+        editorOptions: {
+          value: ''
+        },
+        label: {
+          text: 'Address line 1'
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'Address is required'
+          },
+          {
+            type: 'stringLength',
+            min: 5,
+            message: 'Address line_1 must be at least 5 characters'
+          }
+        ]
+      },
+      {
+        dataField: 'address_line_2',
+        editorType: 'dxTextArea',
+        colSpan: 2,
+        editorOptions: {
+          value: ''
+        },
+        label: {
+          text: 'Address line 2 (Landmark)'
+        }
+        // validationRules: [
+        //   {
+        //     // type: 'required',
+        //     message: 'Address is required'
+        //   }
+        // ]
+      },
+      {
+        cssClass: 'text-right',
+        colSpan: 2,
+        template: (data, itemElement) => {
+          $(`<div id="clearButton" class="m-1">`)
+            .dxButton({
+              stylingMode: 'contained',
+              text: 'Reset',
+              type: 'danger',
+              elementAttr: {
+                class: 'btn dx-error-button'
+              },
+              onClick(e) {
+                var form = $(SUBDEALER_POPUP_FORM_IDENTIFIER).dxForm('instance');
+                form.resetValues();
+                //$(SUBDEALER_POPUP_FORM_IDENTIFIER).dxDataGrid('instance').refresh();
+              }
+            })
+            .appendTo(itemElement);
+          $('<div class="m-1">')
+            .dxButton({
+              stylingMode: 'contained',
+              text: 'Save Changes',
+              elementAttr: {
+                class: 'save-btn'
+              },
+              useSubmitBehavior: true,
+              onClick(e) {
+                const form = $(SUBDEALER_POPUP_FORM_IDENTIFIER).dxForm('instance');
+                if (form.validate().isValid) {
+                  const formData = form.option().formData;
+                  // console.log('formData', formData);
+                  // dataset.consignee_details_view = formData;    //sankar
+                  // $(LOADING_PROGRAM_TABLE_IDENTIFIER).dxDataGrid('instance').refresh();
+                  const existingSelectedLp = JSON.parse(localStorage.getItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER));
+                  const modifiedSelectedLp = existingSelectedLp.map((row) => {
+                    return {
+                      ...row,
+                      pan_number: row.id === dataset.id ? formData.pan_number : '',
+                      // gst_number: row.id === dataset.id ? formData.gst_number : '',
+                      consignee_state_id: row.id === dataset.id ? formData.consignee_state_id : '',
+                      consignee_district_id: row.id === dataset.id ? formData.consignee_district_id : '',
+                      consignee_pincode: row.id === dataset.id ? formData.consignee_pincode : '',
+                      address: row.id === dataset.id ? formData.address : '',
+                      address_line_2: row.id === dataset.id ? formData.address_line_2 : '',
+                      consignee: row.id === dataset.id ? accountType : row.consignee
+                    };
+                  });
+                  localStorage.setItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER, JSON.stringify(modifiedSelectedLp));
+                  // localStorage.setItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER, JSON.stringify(formData));
+                  $(SUBDEALER_KYC_INFO_POPUP_IDENTIFIER).dxPopup('instance').hide();
+                }
+              }
+            })
+            .appendTo(itemElement);
+        }
+      }
+    ]
+  });
+}
+
+function initiaizeSubdealerPopup(accountType = [], dataset, dxSelectBox) {
+  const subdealerPopUpContentTemplate = function () {
+    return $('<div/>').append(`<div id="${SUBDEALER_POPUP_FORM_IDENTIFIER.replace('#', '')}"></div>`);
+  };
+
+  subdealerPopup = $(SUBDEALER_KYC_INFO_POPUP_IDENTIFIER).dxPopup({
+    contentTemplate: subdealerPopUpContentTemplate,
+    width: 800,
+    height: 390,
+    showTitle: true,
+    title: 'Subdealer KYC Information',
+    visible: true,
+    hideOnOutsideClick: false,
+    showCloseButton: false,
+    toolbarItems: [
+      {
+        toolbar: 'top',
+        location: 'after',
+        widget: 'dxButton',
+        options: {
+          type: 'close',
+          icon: 'close',
+          onClick: function () {
+            dxSelectBox ? dxSelectBox.reset() : null;
+            $(SUBDEALER_KYC_INFO_POPUP_IDENTIFIER).dxPopup('instance').hide();
+          }
+        }
+      }
+    ],
+    position: {
+      at: 'middle',
+      my: 'center',
+      collision: 'fit'
+    },
+    onHiding: function (e) {
+      $('.main-sidebar').css('display', 'block');
+    }
+  });
+
+  setTimeout(() => {
+    loadSubdealerPopupForm(dataset, accountType);
+  }, 100);
+}
+
+// Consignee (other party):
+function loadOtherPartyPopupForm(dataset) {
+  // console.log('dataset', dataset);/
+  const formData = {};
+  $(OTHER_PARTY_POPUP_FORM_IDENTIFIER).dxForm({
+    labelMode: 'floating',
+    formData: formData,
+    colCount: 2,
+    onInitialized: function (e) {
+      formInstance = e.component;
+    },
+    onContentReady: function (e) {},
+    onFieldDataChanged: (e) => {
+      let component = e.component;
+      // console.log('value', e.value);
+      // e.dataField === 'pan_number'
+      if (e.dataField === 'gstin_number') {
+        axios.post(route('webapi.order.digio-verification'), { gstin_number: e.value }).then((response) => {
+          let result = response.data;
+          console.log(result);
+
+          let businessNameEditor = component.getEditor('business_name');
+          businessNameEditor.option('value', result.data.corporate_name);
+
+          let pincodeEditor = component.getEditor('consignee_pincode');
+          pincodeEditor.option('value', result.data.consignee_pincode);
+
+          let addressEditor = component.getEditor('address');
+          addressEditor.option('value', result.data.address);
+
+          let stateEditor = component.getEditor('state');
+          stateEditor.option('value', result.data.state);
+
+          let districtEditor = component.getEditor('district');
+          districtEditor.option('value', result.data.district);
+        });
+      }
+    },
+    items: [
+      {
+        dataField: 'consignee_name',
+        caption: 'consignee name',
+        editorType: 'dxTextBox',
+        editorOptions: {
+          searchEnabled: true,
+          displayExpr: 'Consignee',
+          // valueExpr: 'subdealer_id',
+          showClearButton: true,
+          inputAttr: { style: 'text-transform: uppercase' }
+        },
+        label: {
+          text: 'Consignee name'
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'consignee name is required'
+          }
+        ]
+      },
+      {
+        dataField: 'gstin_number',
+        caption: 'GSTIN Number',
+        editorType: 'dxTextBox',
+        editorOptions: {
+          // items:gstinNumber,
+          inputAttr: {
+            style: 'text-transform: uppercase'
+          }
+        },
+        label: {
+          text: 'GSTIN Number'
+        },
+        validationRules: [
+          {
+            type: 'required',
+            message: 'GSTIN is compolsory'
+          }
+        ]
+      },
+      {
+        dataField: 'business_name',
+        caption: 'Business Name as per GST',
+        editorType: 'dxTextBox',
+        editorOptions: {
+          inputAttr: {
+            style: 'text-transform: uppercase'
+          }
+        },
+        label: {
+          text: 'Business Name as per GST'
+        }
+      },
+      {
+        dataField: 'consignee_pincode',
+        editorType: 'dxTextBox',
+        // colSpan: 2,
+        editorOptions: {
+          value: '',
+          useMaskedValue: true
+        },
+        label: {
+          text: 'Pin-code'
+        },
+        validationRules: [
+          // {
+          //   type: 'required',
+          //   message: 'Pin -code is required'
+          // },
+          // {
+          //   type: 'pattern',
+          //   pattern: /^\d{6}$/,
+          //   message: 'Invalid Pin-Code.'
+          // }
+        ]
+      },
+      // {
+      //   dataField: 'consignee_state_id',
+      //   editorType: 'dxSelectBox',
+      //   editorOptions: {
+      //     // items: states,
+      //     searchEnabled: true,
+      //     showClearButton: true,
+      //     displayExpr: 'state_name',
+      //     valueExpr: 'state_id'
+      //   },
+      //   // validationRules: [
+      //   //   {
+      //   //     type: 'required',
+      //   //     message: 'State is required'
+      //   //   }
+      //   // ],
+      //   label: {
+      //     text: 'State'
+      //   }
+      // },
+      {
+        dataField: 'state',
+        editorType: 'dxTextBox',
+        editorOptions: {
+          // items: states,
+          searchEnabled: true,
+          showClearButton: true,
+          displayExpr: 'state_name'
+          // valueExpr: 'state_id'
+        },
+        // validationRules: [
+        //   {
+        //     type: 'required',
+        //     message: 'State is required'
+        //   }
+        // ],
+        label: {
+          text: 'State'
+        }
+      },
+      // {
+      //   dataField: 'consignee_district_id',
+      //   editorType: 'dxSelectBox',
+      //   editorOptions: {
+      //     items: [],
+      //     searchEnabled: true,
+      //     showClearButton: true,
+      //     displayExpr: 'district_name',
+      //     valueExpr: 'district_id'
+      //   },
+      //   // validationRules: [
+      //   //   {
+      //   //     type: 'required',
+      //   //     message: 'District is required'
+      //   //   }
+      //   // ],
+      //   label: {
+      //     text: 'District'
+      //   }
+      // },
+      {
+        dataField: 'district',
+        editorType: 'dxTextBox',
+        editorOptions: {
+          items: [],
+          searchEnabled: true,
+          showClearButton: true,
+          displayExpr: 'district_name'
+          // valueExpr: 'district_id'
+        },
+        // validationRules: [
+        //   {
+        //     type: 'required',
+        //     message: 'District is required'
+        //   }
+        // ],
+        label: {
+          text: 'District'
+        }
+      },
+      {
+        dataField: 'address',
+        editorType: 'dxTextArea',
+        colSpan: 4,
+        editorOptions: {
+          value: ''
+        },
+        label: {
+          text: 'Address line 1'
+        }
+        // validationRules: [
+        //   {
+        //     type: 'required',
+        //     message: 'Address is required'
+        //   },
+        //   {
+        //     type: 'stringLength',
+        //     min: 5,
+        //     message: 'Address line_1 must be at least 5 characters'
+        //   }
+        // ]
+      },
+      {
+        dataField: 'address_line_2',
+        editorType: 'dxTextArea',
+        colSpan: 2,
+        editorOptions: {
+          value: ''
+        },
+        label: {
+          text: 'Address line 2 (Landmark)'
+        }
+        // validationRules: [
+        //   {
+        //     // type: 'required',
+        //     message: 'Address is required'
+        //   }
+        // ]
+      },
+      {
+        cssClass: 'text-right',
+        colSpan: 2,
+        template: (data, itemElement) => {
+          $(`<div id="clearButton" class="m-1">`)
+            .dxButton({
+              stylingMode: 'contained',
+              text: 'Reset',
+              type: 'danger',
+              elementAttr: {
+                class: 'btn dx-error-button'
+              },
+              onClick(e) {
+                var form = $(OTHER_PARTY_POPUP_FORM_IDENTIFIER).dxForm('instance');
+                form.resetValues();
+                //$(SUBDEALER_POPUP_FORM_IDENTIFIER).dxDataGrid('instance').refresh();
+              }
+            })
+            .appendTo(itemElement);
+          $('<div class="m-1">')
+            .dxButton({
+              stylingMode: 'contained',
+              text: 'Save Changes',
+              elementAttr: {
+                class: 'save-btn'
+              },
+              useSubmitBehavior: true,
+              onClick(e, data) {
+                const form = $(OTHER_PARTY_POPUP_FORM_IDENTIFIER).dxForm('instance');
+
+                if (form.validate().isValid) {
+                  const formData = form.option().formData;
+                  console.log('fromData', formData);
+                  const existingSelectedLp = JSON.parse(localStorage.getItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER));
+                  // console.log('existingSelectedLp', existingSelectedLp);
+                  const modifiedSelectedLp = existingSelectedLp.map((row) => {
+                    // console.log('row', row);
+                    return {
+                      ...row,
+                      consignee_name: row.id === dataset.id ? formData.consignee_name : '',
+                      business_name: row.id === dataset.id ? formData.business_name : '',
+                      pan_number: row.id === dataset.id ? formData.pan_number : '',
+                      gst_number: row.id === dataset.id ? formData.gstin_number : '',
+                      state: row.id === dataset.id ? formData.state : '',
+                      district: row.id === dataset.id ? formData.district : '',
+                      consignee_pincode: row.id === dataset.id ? formData.consignee_pincode : '',
+                      address: row.id === dataset.id ? formData.address : '',
+                      address_line_2: row.id === dataset.id ? formData.address_line_2 : ''
+                      // consignee: row.id === dataset.id ? accountType : row.consignee
+                    };
+                  });
+                  localStorage.setItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER, JSON.stringify(modifiedSelectedLp));
+                  // console.log('modifiedSelectedLP', modifiedSelectedLp);
+                  $(OTHER_PARTY_KYC_INFO_POPUP_IDENTIFIER).dxPopup('instance').hide();
+                }
+              }
+            })
+            .appendTo(itemElement);
+        }
+      }
+    ]
+  });
+}
+
+// Consignee (other party):
+function initiaizeOtherPartyPopup(accountType = [], dataset, dxSelectBox) {
+  const OtherPartyPopUpContentTemplate = function () {
+    return $('<div/>').append(`<div id="${OTHER_PARTY_POPUP_FORM_IDENTIFIER.replace('#', '')}"></div>`);
+  };
+
+  otherPartyPopup = $(OTHER_PARTY_KYC_INFO_POPUP_IDENTIFIER).dxPopup({
+    contentTemplate: OtherPartyPopUpContentTemplate,
+    width: 800,
+    height: 390,
+    showTitle: true,
+    title: 'Other Party KYC Information',
+    visible: true,
+    hideOnOutsideClick: false,
+    showCloseButton: false,
+    toolbarItems: [
+      {
+        toolbar: 'top',
+        location: 'after',
+        widget: 'dxButton',
+        options: {
+          type: 'close',
+          icon: 'close',
+          onClick: function () {
+            dxSelectBox ? dxSelectBox.reset() : null;
+            $(OTHER_PARTY_KYC_INFO_POPUP_IDENTIFIER).dxPopup('instance').hide();
+          }
+        }
+      }
+    ],
+    position: {
+      at: 'middle',
+      my: 'center',
+      collision: 'fit'
+    },
+    onHiding: function (e) {
+      $('.main-sidebar').css('display', 'block');
+    }
+  });
+
+  setTimeout(() => {
+    loadOtherPartyPopupForm(dataset);
+  }, 100);
+}
+
+const loadingInitialTemplate = () => {
+  return $(`<div/>`).append('');
+};
+
+$(LOADING_PROGRAM_POPUP_IDENTIFIER)
+  .dxPopup({
+    contentTemplate: loadingInitialTemplate,
+    fullScreen: true,
+    height: 400,
+    container: '.dx-viewport',
+    showTitle: true,
+    title: 'Loading program creation',
+    visible: false,
+    dragEnabled: false,
+    hideOnOutsideClick: false,
+    showCloseButton: true,
+    position: {
+      at: 'middle',
+      my: 'center',
+      collision: 'fit'
+    },
+    onShowing: function () {
+      $('.main-sidebar').css('display', 'none');
+    },
+    // onHiding: function () {
+    //   $('.main-sidebar').css('display', 'block');
+    // }
+    onHiding: function () {
+      $('.main-sidebar').css('display', 'block');
+      localStorage.removeItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER);
+      $(REQUISITION_HISTORY_TABLE_IDENTIFIER).dxDataGrid('instance').clearSelection();
+    }
+  })
+  .dxPopup('instance');
+
+function loadForm() {
+  const formData = {};
+  $(REQUISITION_HISTORY_SEARCH_FORM_IDENTIFIER)
+    .dxForm({
+      formData,
+      showColonAfterLabel: false,
+      labelMode: 'floating',
+      onContentReady: (e) => {},
+      onFieldDataChanged: (e) => {
+        let component = e.component;
+        if (e.dataField === 'state_id') {
+          let editor = component.getEditor('district_id');
+          dxAreaHelper.getDistirct(e.value, editor);
+        }
+        if (e.dataField === 'district_id') {
+          let editor = component.getEditor('dealer_id');
+          let accountFilterParams = {
+            requested_account_type: 39,
+            product_id: 1,
+            parent_account_id: null,
+            account_status: '5,7',
+            district_id: e.value
+          };
+          dxAreaHelper.getAccount(accountFilterParams, editor);
+        }
+      },
+      items: [
+        {
+          itemType: 'group',
+          colCount: 6,
+          items: [
+            {
+              dataField: 'state_id',
+              editorType: 'dxSelectBox',
+              editorOptions: {
+                items: states,
+                searchEnabled: true,
+                showClearButton: true,
+                displayExpr: 'state_name',
+                valueExpr: 'state_id'
+              },
+              validationRules: [
+                {
+                  type: 'required',
+                  message: 'State is required'
+                }
+              ],
+              label: {
+                text: 'Select State'
+              }
+            },
+            {
+              dataField: 'district_id',
+              editorType: 'dxSelectBox',
+              editorOptions: {
+                items: [],
+                searchEnabled: true,
+                showClearButton: true,
+                displayExpr: 'district_name',
+                valueExpr: 'district_id'
+              },
+              // validationRules: [
+              //   // {
+              //   //   type: 'required',
+              //   //   message: 'District is required'
+              //   // }
+              // ],
+              label: {
+                text: 'Select District'
+              }
+            },
+            {
+              dataField: 'dealer_id',
+              editorType: 'dxSelectBox',
+              editorOptions: {
+                items: [],
+                searchEnabled: true,
+                valueExpr: 'account_id',
+                displayExpr: (item) => {
+                  if (item) {
+                    return `${item.name} (${item.sap_code})`;
+                  }
+                },
+                showClearButton: true
+              },
+              validationRules: [],
+              label: {
+                text: 'Select Dealer'
+              }
+            },
+            {
+              dataField: 'status',
+              editorType: 'dxSelectBox',
+              editorOptions: {
+                items: statuses,
+                searchEnabled: true,
+                valueExpr: 'id',
+                displayExpr: (item) => {
+                  if (item) {
+                    return `${item.name}`;
+                  }
+                },
+                showClearButton: true
+              },
+              validationRules: [],
+              label: {
+                text: 'Select Requisition Status'
+              }
+            },
+            {
+              dataField: 'requisition_date',
+              editorType: 'dxDateBox',
+              editorOptions: {
+                type: 'date',
+                pickerType: 'calendar',
+                formatString: 'd/M/y',
+                displayFormat: 'd/M/y',
+                value: null,
+                inputAttr: { 'aria-label': 'Disabled' }
+              },
+              validationRules: [],
+              label: {
+                text: 'Select Requisition Date'
+              }
+            },
+            {
+              cssClass: 'text-right',
+              colSpan: 1,
+              template: (data, itemElement) => {
+                $('<div class="m-1">')
+                  .dxButton({
+                    text: 'Search',
+                    type: 'success',
+                    elementAttr: {
+                      class: 'btn dx-success-button p-0'
+                    },
+                    useSubmitBehavior: true,
+                    onClick(e) {
+                      var form = $('#form').dxForm('instance');
+                      if (form.validate().isValid) {
+                        var formData = form.option().formData;
+                        // console.log('formData', formData);
+                        loadRequisitions(formData);
+                      }
+                    }
+                  })
+                  .appendTo(itemElement);
+                $(`<div id="clearButton" class="m-1">`)
+                  .dxButton({
+                    stylingMode: 'contained',
+                    text: 'Reset',
+                    type: 'danger',
+                    elementAttr: {
+                      class: 'btn dx-error-button'
+                    },
+                    onClick(e) {
+                      var form = $('#form').dxForm('instance');
+                      form.resetValues();
+                      $('#order-render-div').dxDataGrid('instance').refresh();
+                    }
+                  })
+                  .appendTo(itemElement);
+              }
+            }
+          ]
+        }
+      ]
+    })
+    .dxForm('instance');
+}
+
+function loadRequisitions(payload = null) {
+  var dataSource = new DevExpress.data.CustomStore({
+    key: KEYEXPR,
+    load: function (loadOptions) {
+      var deferred = $.Deferred(),
+        args = {};
+      [].forEach(function (i) {
+        if (i in loadOptions && this.isNotEmpty(loadOptions[i])) args[i] = JSON.stringify(loadOptions[i]);
+      });
+      // console.log('load Options', loadOptions);
+      if (payload?.requisition_date) {
+        payload.requisition_date = moment(payload.requisition_date).format('YYYY-MM-DD');
+      }
+      $.ajax({
+        url: route('webapi.order.get_requisition_history'),
+        method: 'GET',
+        headers: HEADER_OBJECT,
+        dataType: 'json',
+        data: payload,
+        success(result) {
+          deferred.resolve(result.data, {
+            totalCount: result.totalCount
+          });
+        },
+        error: function () {
+          deferred.reject('Data Loading Error');
+        }
+      });
+      return deferred.promise();
+    }
+  });
+
+  $(REQUISITION_HISTORY_TABLE_IDENTIFIER).dxDataGrid({
+    dataSource,
+    KEYEXPR,
+    repaintChangesOnly: true,
+    remoteOperations: false,
+    repaintChangesOnly: true,
+    columnHidingEnabled: false,
+    showBorders: true,
+    showRowLines: true,
+    allowColumnReordering: false,
+    allowColumnResizing: true,
+    columnAutoWidth: true,
+    showBorders: true,
+    hoverStateEnabled: true,
+    wordWrapEnabled: true,
+    rowAlternationEnabled: true,
+    allowSort: false,
+    paging: {
+      enabled: true,
+      pageSize: 10
+    },
+    scrolling: {
+      mode: 'virtual',
+      showScrollbar: 'always',
+      scrollByContent: true
+    },
+    ...LOAD_PANEL_DX,
+    selection: {
+      mode: 'multiple'
+    },
+    export: {
+      enabled: true
+    },
+    onInitialized: () => {
+      localStorage.removeItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER);
+    },
+    onSelectionChanged(selectedItems) {
+      const data = selectedItems.selectedRowsData;
+      localStorage.setItem(SELECTED_REQUISITION_LOCAL_STORAGE_IDENTIFIER, JSON.stringify(data));
+      createLoadingProgramButtonComponent.option('disabled', !data.length);
+    },
+    onEditorPreparing(e) {
+      const rowData = e.row?.data;
+      const status = rowData?.loaded || -1;
+      if (e.command === 'select') {
+        if (status === 1) {
+          e.editorOptions.disabled = true;
+          e.editorOptions.onValueChanged = function (ev) {
+            e.component.deselectRows([e.row.key]);
+          };
+        }
+      }
+    },
+    onToolbarPreparing: (e) => {
+      e.toolbarOptions.items.unshift({
+        location: 'before',
+        template() {
+          return $('<div>').addClass('text-info').append($('<span>').text('For creating loading programme you have to select first by clicking the checkbox below.'));
+        }
+      });
+      e.toolbarOptions.items.unshift({
+        location: 'after',
+        widget: 'dxButton',
+        options: {
+          stylingMode: 'contained',
+          text: 'Create loading programme',
+          disabled: true,
+          type: 'default',
+          onInitialized(e) {
+            createLoadingProgramButtonComponent = e.component;
+          },
+          elementAttr: {
+            class: 'btn btn-success',
+            id: 'create-loading-program'
+          },
+          onClick(e) {
+            let popup = $(LOADING_PROGRAM_POPUP_IDENTIFIER).dxPopup('instance');
+            popup.content().html(loadingProgramTemplate());
+            popup.show();
+          }
+        }
+      });
+    },
+    onExporting: function (e) {
+      e.component.beginUpdate();
+      toastr.info('Data has been exported, please check your broswer downloads');
+      var workbook = new ExcelJS.Workbook();
+      var worksheet = workbook.addWorksheet('Main sheet');
+      DevExpress.excelExporter
+        .exportDataGrid({
+          worksheet: worksheet,
+          component: e.component
+        })
+        .then(function () {
+          workbook.xlsx.writeBuffer().then(function (buffer) {
+            saveAs(
+              new Blob([buffer], {
+                type: 'application/octet-stream'
+              }),
+              'RequisitionHistory.xlsx'
+            );
+          });
+        });
+    },
+    columns: [
+      {
+        dataField: 'order_code',
+        caption: 'Requisition ID',
+        fixed: false,
+        cellTemplate: (container, options) => {
+          let id = options.data.id;
+          let status = options.data.status;
+          const routeURL = route('web.order.edit_primary', {
+            id: btoa(id)
+          });
+
+          // old code:
+          // let span = status == 0 ? `<a class="text-info" onclick='window.open("${routeURL}")' target='_blank'>${options.data.order_code}</a>` : options.data.order_code;
+          // container.append(span);
+          // new code:
+          if (status == 0) {
+            let span = $(`<a class="text-info dx-link " onclick='window.open("${routeURL}")' target='_blank'>${options.data.order_code}</a>`).attr('href', 'javascript:void(0)');
+            container.append(span);
+          } else {
+            let span = $(`<a class="text-info dx-link ">${options.data.order_code}</a>`).attr('href', 'javascript:void(0)');
+            // let span=options.data.order_code
+            container.append(span);
+          }
+        }
+      },
+      {
+        dataField: 'order_date',
+        fixed: false,
+        caption: 'Requisition Date',
+        width: 150,
+        visible: true
+      },
+      {
+        dataField: 'order_status_name',
+        caption: 'Requisition Status',
+        alignment: 'left',
+        cellTemplate: (container, options) => {
+          const status = options?.data?.status;
+          const statusBlock = makeStatusLabel(status, 'order');
+          container.append(statusBlock);
+        }
+      },
+      // {
+      //   dataField: 'vehicle_status_value',
+      //   caption: 'Vehicle status',
+      //   alignment: 'left',
+      //   cellTemplate: (container, options) => {
+      //     const statusName = options?.data?.vehicle_status ? 'Added' : 'Not Added';
+      //     const type = statusName === 'Added' ? 'success' : 'warning';
+      //     const statusBlock = makeCustomStatusLabel(statusName, type);
+      //     container.append(statusBlock);
+      //   }
+      // },
+      {
+        dataField: 'dealer_name',
+        allowEditing: false
+      },
+      {
+        dataField: 'source',
+        caption: 'Source'
+      },
+      {
+        dataField: 'order_qty',
+        caption: 'Requisition Qty (ton)'
+      },
+      {
+        dataField: 'approved_qty',
+        caption: 'Approved Qty (ton)'
+      }
+    ]
+  });
+}
+
+/**
+ * Initial Load
+ */
+loadForm();
+loadRequisitions();
+
+$(window).on('focus', function () {
+  loadRequisitions();
+});
